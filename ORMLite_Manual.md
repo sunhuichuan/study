@@ -97,15 +97,56 @@ public class AccountApp {         public static void main(String[] args) throws
 ### 2.1 构建你的 Class
 
 如果需要讲你的class持久化存储，你需要做下面几件事：
-1. 添加 @DatabaseTable 注解到每一个calss的顶部。你也可以使用@Entity。
-2. 在每个字段被持久化存储之前，给其添加 @DatabaseField 注解。你也可以使用@Column 或者其他的。
-3. 给每一个class添加一个无参的构造方法，访问声明至少是包可见（也就是不能为private）。
+
+- 添加 @DatabaseTable 注解到每一个calss的顶部。你也可以使用@Entity。
+- 在每个字段被持久化存储之前，给其添加 @DatabaseField 注解。你也可以使用@Column 或者其他的。
+- 给每一个class添加一个无参的构造方法，访问声明至少是包可见（也就是不能为private）。
+
 
 #### 2.1.1 添加 ORMLite 注解
 
+Java 5 以后就开始支持注解，它提供了关于类、方法和字段的元信息的特殊标记。ORMLite 提供了自己的注解（@DatabaseTable 和 DatabaseField）或者 javax.persitence 包里标准的注解。请参考[ Section 2.1.2 \[Javax Persistence Annotations\], page 11]()。注解是配置你的 class 最容易的方式，但是你也可以用 Java 代码和 Spring XML 配置。请参考[ Section 5.2 \[Class Configuration\], page 56]()。
 
+使用 ORMlite 注解时，每一个你持久化到数据库的 Java class ，你都需要正确的添加 @DatabaseTable 注解到 public class 这一行的上面。每一个被这类注解标记的 class 持久化到数据库中时都会被创建一个自己的 table 。例如：
+```
+ 	@DatabaseTable(tableName = "accounts")     public class Account {     ...
+```
 
+@DatabaseTable 注解有一个可选参数 tableName 用于指定和该 class 相关联的数据库表。如果没有指定 tableName 这个参数，根据规范 class 的名字将作为默认值。上面的例子中，每一个 Account 对象都会作为一行持久化到数据库的表中。如果 tableName 如果没有被指定，account 将会作为表名。（原文：If the tableName was not specified, the account table would be used instead.）
 
+更多高级开发者也许希望添加一个 daoClass 参数用户指定操作这个 class 的 DAO 对象。实例化 DAO 是通过 DaoManager 内部进行的。请参考[\[DaoManager\], page 19.]()。
+
+另外，在每一个 class 中，你还需要给每一个你需要持久化到数据库的字段添加 @DatabaseField 注解。每一个字段都会作为数据库表中一行的一列被持久化到数据库。例如：
+
+```
+	  @DatabaseTable(tableName = "accounts")      public class Account {         @DatabaseField(id = true)         private String name;         @DatabaseField(canBeNull = false)         private String password;         ...
+
+```
+
+在上面的例子中，account 表中的每一个行都有两列：
+
+- name 是一个 string 类型的列，并且也是数据库中的一行的 id（identity）
+- password 也是一个 string 类型的列，可以为 null 。
+
+@DatabaseField 注解可以有下面这些属性字段：
+
+**columnName**
+
+可以通过这个属性，设置该字段在数据库中的列名。（原文：String name of the column in the database that will hold this field.）如果没有设置该字段，根据规范，field 的名字将设置为列名。
+
+**dataType**
+
+设置字段的类型，是一个 DataType 类对象。通常情况下，整个类型都是通过字段的Java类型设定，不需要单独指定。此属性和SQL类型一致。请参考[See Section 2.2 \[Persisted Types\], page 14.]()
+
+**defaultValue**
+
+当我们在数据库中创建一行新记录时的默认值。默认是空。
+
+**width**
+
+字段的 Integer 宽度，主要是作用于 string 类型的字段。默认值是0，代表设置 data-type 和 database-specific 为默认值。如果该字段是字符串则默认值为255个字符串，虽然一些数据库不支持这个属性。（原文：Default is 0 which means to take the data-type and database-specific default. For strings that means 255 characters although some databases do not support this.）
+
+**canBeNull**
 
 
 
