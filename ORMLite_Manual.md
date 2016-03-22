@@ -148,6 +148,113 @@ Java 5 以后就开始支持注解，它提供了关于类、方法和字段的�
 
 **canBeNull**
 
+Boolean 类型的属性值，用于指定该字段是否可以为null。默认值是true。如果设置为 false ，当每一个对象插入数据库时，你都需要给该字段提供一个值。
+
+**id**
+
+Boolean 类型的属性，控制此字段是否为数据库表的id字段。默认值是 false 。一个 class 中只有一个字段可以设置这个属性。id 属性字段唯一标志数据库表的一行，并且如果你有通过id执行query、update、refresh 和 delete 操作，此属性是必须的。这个属性和generatedId, generatedIdSequence 三者只能指定一个。请参考[Section 2.8.1 \[Id Column\], page 24.]()
+
+**generatedId**
+
+Boolean 类型的属性，控制此字段是否为一个自动生成的id字段。默认是false。一个 class 中只有一个字段可以设置该属性。这个属性告诉数据库给每一行插入的记录自动生成一个相应的id。当一个对象用 Dao.create() 生成了一个id，数据库就会生成为将要被返回的这一行生成一个id，并且将此id通过这个create方法设置到该对象中。（原文：When an object with a generated- id is created using the Dao.create() method,the database will generate an id for the row which will be returned and set in the object by the create method. ）有一些数据库需要自动生成的id的序列，在这种情况下，序列的名会被自动创建。通过 generatedIdSequence 可以指定序列的名字。generatedId 、 id 和 generatedIdSequence 三个属性只有一个可以被设置。请查阅[ Section 2.8.2 \[GeneratedId Column\], page 25.]()
+
+**generatedIdSequence**
+
+将使用序列号的字符串类型名字作为它的值。（原文：String name of the sequence number to be used to generate this value.）此属性和 generatedId 属性功能相同，但是你可以指定使用的序列名字。默认值为空。一个class中只有一个字段可以设置此属性。只有当数据库需要生成的id的序列时才需要此属性。如果你使用 generatedId 替代此属性，序列名会被自动创建。generatedIdSequence 、 id 和 generatedId 三个属性只有一个可以被设置。 请查阅[Section 2.8.3 \[GeneratedIdSequence Column\], page 25.]()
+
+**foreign**
+
+Boolean 类型属性，用于指定此字段和数据库中存储的另外一个class相对应关联。默认值是false。这个属性必须是一个基本类型。另外一个被关联的class必须有一个id字段（id、generatedId 或者 generatedIdSequence）存储到这个数据库表中。当一次查询返回一个对象时，这个外键对象只有id字段会被赋值。请参考[Section 2.12 \[Foreign Objects\], page 32]()
+
+**useGetSet**
+
+Boolean 类型属性，告诉ORMLite需要通过 get 和 set 方法访问此字段。默认值是false，使用Java反射代替直接访问该字段。如果你要存储的对象有访问保护，这个属性是必要的。
+
+*NOTE：* get 方法名字必须符合 getXxx() 格式，这个字段的名字首字母大写就是Xxx。 get 方法*必须*返回一个与这个字段完全匹配的class。和此字段完全匹配的class的set方法*必须*符合setXxx()格式，并且返回值为void。例如：
+
+```
+@DatabaseField(useGetSet = true)     private Integer orderCount;     public Integer getOrderCount() {       return orderCount;}     public void setOrderCount(Integer orderCount) {       this.orderCount = orderCount;}
+```
+
+**unknownEnumName**
+
+当这个字段是Java的枚举类型，如果数据库表中一行记录的值在枚举类型中没有找到，你可以指定这个枚举值的名字。（原文：If the field is a Java enumerated type then you can specify the name of a enumerated value which will be used if the value of a database row is not found in the enumerated type.）当读取数据库表中一行记录时，如果*含有*一个不可识别的列名或者序列号值（原文：contain an unknown name or ordinal value），并且这个属性没有被设置，那么就会抛出一个SQLException。当向前兼容处理数据库中过期数据，或者向前兼容老软件访问最新数据时，或者你必须回滚到一个稳定版本时，这个属性是非常有用的。
+
+**throwIfNull**
+
+Boolean类型属性，告诉ORMLite一个基本类型字段试图存储null值到数据库时，是否抛出异常。默认值是false。当此属性为false，并且数据库字段是null时，这个基本类型字段的值会被设置为0（false，null 或者其他）。这个属性只能被用于基本类型字段。
+
+**persisted**
+
+如果不需要存储这个字段到数据库，则设置此属性的值为false（默认是true）。当你想给每个字段都添加这个注解，但是想把一部分字段不存储到数据库，这个属性是很有用的。
+
+**format**
+
+这个属性允许给特殊字段指定格式化信息。目前只有以下两种类型可用：
+- DATE_STRING 用于格式化存储到数据库中的时间字符串。
+- STRING_BYTES 用于指定一个编码string字符串为bteys数组的Charset字符集。（原文：STRING_BYTES for specifying the Charset used to encode the string as an array of bytes）
+
+**unique**
+
+给表添加一个约束，指定此字段在表的所有行中唯一。例如：你有一个Account 类，它生成了一个唯一的account_id,但是你还需要一个email地址字段在所有的 Account 对象中唯一。如果一个表中有多个字段被标记为唯一，他们每一个都要保证自己在同类字段中唯一。例如：如果你有 firstName 和 lastName 两个字段都配置了 unique=true 属性，并且数据库中有一个“Bob”，“Smith”的记录，那么“Bob”，“Jones”和“Kevin”，“Smith”都无法存储到数据库。
+
+一个以上字段的*combination*(组合？)需要保证各自唯一，请查阅 uniqueCombo 的设置。你也可以使用 uniqueIndexName 给这个字段设置一个index。
+
+**uniqueCombo**
+
+添加一个表的约束，用于保证组合中所有字段都设置 uniqueCombo 为true时，它必须是表中所有行唯一。（原文：Adds a constraint to the table so that a combination of all fields that have uniqueCombo set to true has to be unique across all rows in the table.）例如：如果你有 firstName 和 lastName 字段，都设置了 uniqueCombo=true，并且数据库中已经存储了“Bob”，“Smith”，你无法再添加另一个“Bob”，“Smith”，但是可以插入“Bob”，“Jones” 和 “Kevin”，“Smith”。
+
+如果想保证多个字段各自唯一，请查看 unique 设置。你也可以使用 uniqueIndexName 给这个字段创建一个索引。
+
+**index**
+
+Boolean类型的属性（默认值是false），通知数据库给这个字段添加一个索引。当配置index=true，数据库会创建一个列名加“_inx”后缀的索引。可以通过 indexName 指定创建索引的名字，或者索引多个字段。（原文：To specify a specific name of the index or to index multiple fields, use the indexName field.） 
+
+**uniqueIndex**
+
+Boolean类型的属性（默认值是false），用于指定数据库给这个字段添加唯一索引。作用和index类似，但是它可以确保这个index中的所有值都唯一。如果只是为了保证字段的唯一性，可以使用 unique 代替此属性。
+
+**indexName**
+
+String 类型的属性（默认值是空），用于指定数据库给这个字段添加索引的名字。有了此属性，就不需要再指定 index 的 boolean 值了。如果需要创建多个字段联合索引，那么每个字段都需要设置相同的 indexName。
+
+**uniqueIndexName**
+
+String 类型的属性（默认是空），用于指定数据库给这个字段段添加唯一索引的名字。和 index 属性的功能类似，不过此属性会保证该索引下的所有值唯一。例如：在此属性为true时，你可以插入（"pittsburgh", "pa") 、 ("harrisburg", "pa") 和 ("pittsburgh", "tx") ，但是无法插入另一个 ("pittsburgh", "pa")。
+
+**foreignAutoRefresh**
+
+设置此属性为true（默认值是false），可以使查询对象时，自动刷新外键字段。为默认值时只会
+在检索对象中设置ID字段，调用方需要自己通过正确的DAO调用refresh来填充对象的其他字段。如果这个属性被设置为true，当查询一个对象时，会通过一个内部的DAO开启另外一个数据库查询用于填充外键对象的其他字段。*注意：*在创建一个对象时，此属性为true也不会自动创建外键对象。
+
+*注意：*自动填充外键对象会另外创建一个内部DAO对象，所以在低内存设备上也许需要手动的调用refresh。
+
+*注意：*为了防止递归，有一些地方的自动刷新是被限制执行的。如果你 auto—refreshing 一个字段已经设置了 foreignAutoRefresh=true 的类，或者你 auto—refreshing 一个有集合外键的类，在这些情况下，这些字段会被设置为null并且不会执行 auto—refreshed。（原文：If you are auto-refreshing a class that itself has field with foreignAutoRefresh set to true or if you are auto-refreshing a class with a foreign collection, in both cases the resulting field will be set to null and not auto-refreshed.）你还可以直接在字段上调用refresh。
+
+*注意：*如果你有一个 auto-refreshed 字段是一个对象，这个对象也有一个 auto-refreshed 字段，你应该调整 maxForeignAutoRefreshLevel 的值。请看下面。
+
+**maxForeignAutoRefreshLevel**
+
+这个属性可以设置配置外键的层级最大值。举个例子，如果一个Question，有一个外键字段是最好的 Answer，并且这个 Answer 有一个外键是和它匹配的 question，这个配置前后循环会变得很大。当你查询一个 Question 时，有一个 auto-refreshed 字段就是一个严重的问题，它会引起无限循环。默认情况下，ORMLite 只允许2级循环，但是你可以将其减少为1（0是非法的）或者增加它。当你加载 Question 时，这个数字越高，数据库的事务发生的就会越频繁。
+
+在我们的例子中，Question 和 Answer 中的外键都可以设置为 auto-refresh。如果auto-refresh设置为true，并且 maxForeignAutoRefreshLevel 设置为1时，当你查询一个 Question ，它的 Answer 字段会被 auto-refreshed，但是 Answer 中的 Question 字段*只有*id字段会被赋值。它不会被自动填充。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
