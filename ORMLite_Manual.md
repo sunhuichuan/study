@@ -237,7 +237,21 @@ String 类型的属性（默认是空），用于指定数据库给这个字段�
 
 这个属性可以设置配置外键的层级最大值。举个例子，如果一个Question，有一个外键字段是最好的 Answer，并且这个 Answer 有一个外键是和它匹配的 question，这个配置前后循环会变得很大。当你查询一个 Question 时，有一个 auto-refreshed 字段就是一个严重的问题，它会引起无限循环。默认情况下，ORMLite 只允许2级循环，但是你可以将其减少为1（0是非法的）或者增加它。当你加载 Question 时，这个数字越高，数据库的事务发生的就会越频繁。
 
-在我们的例子中，Question 和 Answer 中的外键都可以设置为 auto-refresh。如果auto-refresh设置为true，并且 maxForeignAutoRefreshLevel 设置为1时，当你查询一个 Question ，它的 Answer 字段会被 auto-refreshed，但是 Answer 中的 Question 字段*只有*id字段会被赋值。它不会被自动填充。
+在我们的例子中，Question 和 Answer 中的外键都可以设置为 auto-refresh。如果auto-refresh设置为true，并且 maxForeignAutoRefreshLevel 设置为1时，当你查询一个 Question ，它的 Answer 字段会被 auto-refreshed，但是 Answer 中的 Question 字段*只有*id字段会被赋值。它不会被auto-refreshed自动填充。
+
+**allowGeneratedIdInsert**
+
+当这个属性设置为true时（默认值是false），如果插入的对象已经设置有ID字段，ORMLite不会用generated-id覆盖该对象的id值。当你插入表中的数据有时有id，有时需要自动生成id时，这个属性是很有用的。只有这个字段的 generatedId 是true，并且数据库支持时，此属性才有效。
+
+**columnDefinition**
+
+如果此属性被设置了一个 string 值，那么在 CREATE TABLE 语句中就会使用此值定义列名。默认情况下，自动生成SQL语句时，字段的数据库类型在创建列时是必要的。列名由ORMLite提供。
+例如：
+```
+ @DatabaseField(columnDefinition = "LONGBLOB not null",dataType = DataType.BYTE_ARRAY) public byte[] bigBunchOfBytes;
+```
+
+**foreignAutoCreate**
 
 
 
